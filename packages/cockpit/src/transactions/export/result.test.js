@@ -1,5 +1,5 @@
 import buildResult from './result'
-import requestResultMock from './mocks/transctionsMockExport.json'
+import requestResultMock from './mocks/transactionsMockExport.json'
 import mockCSV from './mocks/mockCSV'
 import mockXLS from './mocks/mockXLS'
 

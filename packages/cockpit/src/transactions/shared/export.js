@@ -28,6 +28,21 @@ import {
 
 const LIMITER = '-'
 
+const statusNames = {
+  processing: 'Processando pagamento', 
+  authorized: 'Autorizado', 
+  paid: 'Pago',
+  refunded: 'Estornado', 
+  waiting_payment: 'Aguardando pagamento',
+  pending_refund: 'Estorno pendente',
+  refused: 'Recusada pela operadora de cartão',
+}
+
+const paymentMethodNames = {
+  boleto: 'Boleto',
+  credit_card: 'Cartão de Crédito',
+}
+
 const propOrLimiter = propOr(LIMITER)
 
 const isAntifraudScoreNil = propSatisfies(isNil, 'antifraud_score')
@@ -101,7 +116,11 @@ const formatPhoneProp = pipe(
   join(' ')
 )
 
-const getRecipients = propOrLimiter('split_rules')
+const getRecipients = pipe(
+  prop('split_rules'),
+)
+
+//const getRecipients = propOrLimiter('split_rules')
 
 const getPhoneProp = pipe(
   propOrLimiter('phone'),
@@ -111,7 +130,6 @@ const getPhoneProp = pipe(
     formatPhoneProp
   )
 )
-
 const getPhones = pipe(getPhoneProp)
 
 const getId = unless(isNil, pipe(propOrLimiter('tid'), String))
