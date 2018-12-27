@@ -6,12 +6,14 @@ import {
   either,
   head,
   ifElse,
+  is,
   isEmpty,
   isNil,
   join,
   juxt,
   last,
   length,
+  map,
   path,
   pathOr,
   pathSatisfies,
@@ -28,20 +30,20 @@ import {
 
 const LIMITER = '-'
 
-const statusNames = {
-  processing: 'Processando pagamento', 
-  authorized: 'Autorizado', 
-  paid: 'Pago',
-  refunded: 'Estornado', 
-  waiting_payment: 'Aguardando pagamento',
-  pending_refund: 'Estorno pendente',
-  refused: 'Recusada pela operadora de cartão',
-}
+// const statusNames = {
+//   processing: 'Processando pagamento',
+//   authorized: 'Autorizado',
+//   paid: 'Pago',
+//   refunded: 'Estornado',
+//   waiting_payment: 'Aguardando pagamento',
+//   pending_refund: 'Estorno pendente',
+//   refused: 'Recusada pela operadora de cartão',
+// }
 
-const paymentMethodNames = {
-  boleto: 'Boleto',
-  credit_card: 'Cartão de Crédito',
-}
+// const paymentMethodNames = {
+//   boleto: 'Boleto',
+//   credit_card: 'Cartão de Crédito',
+// }
 
 const propOrLimiter = propOr(LIMITER)
 
@@ -118,9 +120,17 @@ const formatPhoneProp = pipe(
 
 const getRecipients = pipe(
   prop('split_rules'),
+  ifElse(
+    is(Array),
+    pipe(
+      map(propOr('', 'id')),
+      join(', ')
+    ),
+    always('Recebedor Padrão')
+  )
 )
 
-//const getRecipients = propOrLimiter('split_rules')
+// const getRecipients = propOrLimiter('split_rules')
 
 const getPhoneProp = pipe(
   propOrLimiter('phone'),
