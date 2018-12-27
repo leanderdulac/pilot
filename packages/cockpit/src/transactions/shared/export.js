@@ -31,28 +31,36 @@ import {
 
 const LIMITER = '-'
 
-const statusNames = {
-  authorized: 'Autorizado',
-  default: LIMITER,
-  paid: 'Pago',
-  pending_refund: 'Estorno pendente',
-  processing: 'Processando pagamento',
-  refunded: 'Estornado',
-  refused: 'Recusada pela operadora de cartão',
-  waiting_payment: 'Aguardando pagamento',
-}
-
 const paymentMethodNames = {
   boleto: 'Boleto',
   credit_card: 'Cartão de Crédito',
   default: LIMITER,
 }
 
+const riskLevels = {
+  high: 'Alto',
+  low: 'Baixo',
+  moderated: 'Moderado',
+  very_high: 'Muito alto',
+  very_low: 'Muito baixo',
+  unknown: LIMITER,
+}
+
+const isEmptyOrNill = either(isNil, isEmpty)
+
 const propOrLimiter = propOr(LIMITER)
 
 const isAntifraudScoreNil = propSatisfies(isNil, 'antifraud_score')
 
 const isRefuseReasonNil = propSatisfies(isNil, 'refuse_reason')
+
+/*
+  ESTA FUNÇÃO TOSCA PODE SER COLOCADA EM QUALQUER PIPE
+  PARA OS CASOS DE STRINGS QUE PRECISAM SER ESCAPADAS
+  HÁ UM EXEMPLO DISSO NA LINHA 184 (PS: APAGAR ESTE COMENTÁRIO BOSTA)
+*/
+// eslint-disable-next-line no-useless-escape
+const scapeString = value => `\'${value}\'`
 
 const getCardProp = subProp => cond([
   [
@@ -94,20 +102,30 @@ const getCaptureMethod = ifElse(
   getCardProp('capture_method')
 )
 
+const statusNames = {
+  authorized: 'Autorizado',
+  default: LIMITER,
+  paid: 'Pago',
+  pending_refund: 'Estorno pendente',
+  processing: 'Processando pagamento',
+  refunded: 'Estornado',
+  refused: 'Recusada pela operadora de cartão',
+  waiting_payment: 'Aguardando pagamento',
+}
+
 const getStatus = pipe(
   propOr('default', 'status'),
   prop(__, statusNames)
 )
 
-const getStatusReason = ifElse(
-  propEq('status', 'refused'),
-  propOrLimiter('refuse_reason'),
-  propOrLimiter('status_reason')
-)
-
 const getPaymentMethod = pipe(
   propOr('default', 'payment_method'),
   prop(__, paymentMethodNames)
+)
+
+const getRiskLevel = pipe(
+  propOr('unknown', 'risk_level'),
+  prop(__, riskLevels)
 )
 
 const formatPhoneNumber = (number) => {
@@ -137,7 +155,8 @@ const getRecipients = pipe(
     is(Array),
     pipe(
       map(propOr('', 'id')),
-      join(', ')
+      join(', '),
+      scapeString
     ),
     always('Recebedor Padrão')
   )
@@ -146,7 +165,7 @@ const getRecipients = pipe(
 const getPhoneProp = pipe(
   propOrLimiter('phone'),
   ifElse(
-    either(isNil, isEmpty),
+    isEmptyOrNill,
     always(null),
     formatPhoneProp
   )
@@ -155,6 +174,26 @@ const getPhones = pipe(getPhoneProp)
 
 const getId = unless(isNil, pipe(propOrLimiter('tid'), String))
 
+const getDocuments = pipe(
+  path(['customer', 'documents']),
+  ifElse(
+    is(Array),
+    pipe(
+      map(propOr('', 'number')),
+      join(', '),
+      scapeString
+    ),
+    always(LIMITER)
+  )
+)
+
+const getDocumentNumber = ifElse(
+  pathSatisfies(isEmptyOrNill, ['customer', 'documents']),
+  pathOr(LIMITER, ['customer', 'document_number']),
+  getDocuments
+)
+
+
 const transactionSpec = {
   status: getStatus,
   id: getId,
@@ -162,12 +201,12 @@ const transactionSpec = {
   name: getCustomerSubProp('name'),
   payment_method: getPaymentMethod,
   first_digits: getCardProp('first_digits'),
-  documents: propOrLimiter('document_number'),
+  documents: getDocumentNumber,
   email: getCustomerSubProp('email'),
   subscription: propOrLimiter('subscription_id'),
   phones: getPhones,
   holder_name: getCardProp('holder_name'),
-  status_reason: getStatusReason,
+  acquirer_response_code: propOrLimiter('acquirer_response_code'),
   ip: propOrLimiter('ip'),
   brand_name: getCardProp('brand'),
   amount: propOrLimiter('amount'),
@@ -182,7 +221,7 @@ const transactionSpec = {
   city: getAddressSubProp('city'),
   state: getAddressSubProp('state'),
   antifraud: getAntifraudProp,
-  risk_level: propOrLimiter('risk_level'),
+  risk_level: getRiskLevel,
 }
 
 export default transactionSpec
