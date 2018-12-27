@@ -1,4 +1,5 @@
 import {
+  __,
   always,
   applySpec,
   complement,
@@ -30,20 +31,22 @@ import {
 
 const LIMITER = '-'
 
-// const statusNames = {
-//   processing: 'Processando pagamento',
-//   authorized: 'Autorizado',
-//   paid: 'Pago',
-//   refunded: 'Estornado',
-//   waiting_payment: 'Aguardando pagamento',
-//   pending_refund: 'Estorno pendente',
-//   refused: 'Recusada pela operadora de cartão',
-// }
+const statusNames = {
+  authorized: 'Autorizado',
+  default: LIMITER,
+  paid: 'Pago',
+  pending_refund: 'Estorno pendente',
+  processing: 'Processando pagamento',
+  refunded: 'Estornado',
+  refused: 'Recusada pela operadora de cartão',
+  waiting_payment: 'Aguardando pagamento',
+}
 
-// const paymentMethodNames = {
-//   boleto: 'Boleto',
-//   credit_card: 'Cartão de Crédito',
-// }
+const paymentMethodNames = {
+  boleto: 'Boleto',
+  credit_card: 'Cartão de Crédito',
+  default: LIMITER,
+}
 
 const propOrLimiter = propOr(LIMITER)
 
@@ -91,10 +94,20 @@ const getCaptureMethod = ifElse(
   getCardProp('capture_method')
 )
 
+const getStatus = pipe(
+  propOr('default', 'status'),
+  prop(__, statusNames)
+)
+
 const getStatusReason = ifElse(
   propEq('status', 'refused'),
   propOrLimiter('refuse_reason'),
   propOrLimiter('status_reason')
+)
+
+const getPaymentMethod = pipe(
+  propOr('default', 'payment_method'),
+  prop(__, paymentMethodNames)
 )
 
 const formatPhoneNumber = (number) => {
@@ -130,8 +143,6 @@ const getRecipients = pipe(
   )
 )
 
-// const getRecipients = propOrLimiter('split_rules')
-
 const getPhoneProp = pipe(
   propOrLimiter('phone'),
   ifElse(
@@ -145,11 +156,11 @@ const getPhones = pipe(getPhoneProp)
 const getId = unless(isNil, pipe(propOrLimiter('tid'), String))
 
 const transactionSpec = {
-  status: propOrLimiter('status'),
+  status: getStatus,
   id: getId,
   updated_at: propOrLimiter('date_updated'),
   name: getCustomerSubProp('name'),
-  payment_method: propOrLimiter('payment_method'),
+  payment_method: getPaymentMethod,
   first_digits: getCardProp('first_digits'),
   documents: propOrLimiter('document_number'),
   email: getCustomerSubProp('email'),
