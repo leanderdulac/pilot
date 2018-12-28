@@ -54,13 +54,8 @@ const isAntifraudScoreNil = propSatisfies(isNil, 'antifraud_score')
 
 const isRefuseReasonNil = propSatisfies(isNil, 'refuse_reason')
 
-/*
-  ESTA FUNÇÃO TOSCA PODE SER COLOCADA EM QUALQUER PIPE
-  PARA OS CASOS DE STRINGS QUE PRECISAM SER ESCAPADAS
-  HÁ UM EXEMPLO DISSO NA LINHA 184 (PS: APAGAR ESTE COMENTÁRIO BOSTA)
-*/
 // eslint-disable-next-line no-useless-escape
-const scapeString = value => `\'${value}\'`
+const scapeString = value => `\"${value}\"`
 
 const getCardProp = subProp => cond([
   [
@@ -90,6 +85,16 @@ const getAntifraudProp = ifElse(
     recommendation: antifraudRecommendation,
     score: propOrLimiter('antifraud_score'),
   })
+)
+const getCustomerName = pipe(
+  path(['customer', 'name']),
+  ifElse(
+    is(String),
+    pipe(
+      scapeString
+    ),
+    always(LIMITER)
+  )
 )
 
 const getCustomerSubProp = subProp => pathOr(LIMITER, ['customer', subProp])
@@ -166,7 +171,7 @@ const getPhoneProp = pipe(
   propOrLimiter('phone'),
   ifElse(
     isEmptyOrNill,
-    always(null),
+    always(LIMITER),
     formatPhoneProp
   )
 )
@@ -198,14 +203,14 @@ const transactionSpec = {
   status: getStatus,
   id: getId,
   updated_at: propOrLimiter('date_updated'),
-  name: getCustomerSubProp('name'),
+  name: getCustomerName,
   payment_method: getPaymentMethod,
   first_digits: getCardProp('first_digits'),
   documents: getDocumentNumber,
   email: getCustomerSubProp('email'),
   subscription: propOrLimiter('subscription_id'),
   phones: getPhones,
-  holder_name: getCardProp('holder_name'),
+  acquirer_name: propOrLimiter('acquirer_name'),
   acquirer_response_code: propOrLimiter('acquirer_response_code'),
   ip: propOrLimiter('ip'),
   brand_name: getCardProp('brand'),
