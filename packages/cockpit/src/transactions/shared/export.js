@@ -3,6 +3,7 @@ import {
   always,
   applySpec,
   complement,
+  concat,
   cond,
   either,
   head,
@@ -68,6 +69,18 @@ const getCardProp = subProp => cond([
   ],
   [T, always(LIMITER)],
 ])
+
+const getCardNumber = pipe(
+  path(['card', 'first_digits']),
+  ifElse(
+    is(String),
+    pipe(
+      concat('********'),
+      scapeString
+    ),
+    always(LIMITER)
+  ),
+)
 
 const isRefuseReasonAntifraud = propEq('refuse_reason', 'antifraud')
 
@@ -205,7 +218,7 @@ const transactionSpec = {
   updated_at: propOrLimiter('date_updated'),
   name: getCustomerName,
   payment_method: getPaymentMethod,
-  first_digits: getCardProp('first_digits'),
+  card_number: getCardNumber,
   documents: getDocumentNumber,
   email: getCustomerSubProp('email'),
   subscription: propOrLimiter('subscription_id'),
