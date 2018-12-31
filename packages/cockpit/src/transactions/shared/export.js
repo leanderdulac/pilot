@@ -20,6 +20,7 @@ import {
   pathOr,
   pathSatisfies,
   pipe,
+  prepend,
   prop,
   props,
   propEq,
@@ -27,6 +28,7 @@ import {
   propSatisfies,
   splitAt,
   T,
+  toString,
   unless,
 } from 'ramda'
 import moment from 'moment'
@@ -57,12 +59,14 @@ const getCardProp = subProp => cond([
 ])
 
 const getCardNumber = pipe(
-  path(['card', 'first_digits']),
+  path(['card', 'last_digits']),
   ifElse(
     is(String),
     pipe(
-      concat('********'),
-      scapeString
+      concat('******'),
+      //concat(prop('first_digits')),
+      scapeString,
+      (res) => (console.log(res)),
     ),
     always(LIMITER)
   ),
@@ -207,13 +211,27 @@ const getDocuments = pipe(
   )
 )
 
+const getSubscriptions = pipe(
+  prop('subscription_id'),
+  ifElse(
+    is(Array),
+    pipe(
+      map(propOr('', 'id')),
+      join(', '),
+      scapeString
+    ),
+    always(LIMITER)
+  )
+)
+
 const getDocumentNumber = ifElse(
   pathSatisfies(isEmptyOrNill, ['customer', 'documents']),
   pathOr(LIMITER, ['customer', 'document_number']),
   getDocuments
 )
 
-const formarDate = date => moment(date).format('DD/MM/YYYY h:mm')
+
+const formarDate = date => moment(date).format('DD/MM/YYYY hh:mm')
 
 const getUpdatedDate = pipe(
   propOrLimiter('date_created'),
@@ -229,7 +247,7 @@ const transactionSpec = {
   card_number: getCardNumber,
   documents: getDocumentNumber,
   email: getCustomerSubProp('email'),
-  subscription: propOrLimiter('subscription_id'),
+  subscription: getSubscriptions,
   phones: getPhones,
   acquirer_name: propOrLimiter('acquirer_name'),
   acquirer_response_code: propOrLimiter('acquirer_response_code'),
