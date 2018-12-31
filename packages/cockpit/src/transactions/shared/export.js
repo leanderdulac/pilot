@@ -29,23 +29,9 @@ import {
   T,
   unless,
 } from 'ramda'
+import moment from 'moment'
 
 const LIMITER = '-'
-
-const paymentMethodNames = {
-  boleto: 'Boleto',
-  credit_card: 'Cartão de Crédito',
-  default: LIMITER,
-}
-
-const riskLevels = {
-  high: 'Alto',
-  low: 'Baixo',
-  moderated: 'Moderado',
-  very_high: 'Muito alto',
-  very_low: 'Muito baixo',
-  unknown: LIMITER,
-}
 
 const isEmptyOrNill = either(isNil, isEmpty)
 
@@ -136,10 +122,25 @@ const getStatus = pipe(
   prop(__, statusNames)
 )
 
+const paymentMethodNames = {
+  boleto: 'Boleto',
+  credit_card: 'Cartão de Crédito',
+  default: LIMITER,
+}
+
 const getPaymentMethod = pipe(
   propOr('default', 'payment_method'),
   prop(__, paymentMethodNames)
 )
+
+const riskLevels = {
+  high: 'Alto',
+  low: 'Baixo',
+  moderated: 'Moderado',
+  very_high: 'Muito alto',
+  very_low: 'Muito baixo',
+  unknown: LIMITER,
+}
 
 const getRiskLevel = pipe(
   propOr('unknown', 'risk_level'),
@@ -188,6 +189,7 @@ const getPhoneProp = pipe(
     formatPhoneProp
   )
 )
+
 const getPhones = pipe(getPhoneProp)
 
 const getId = unless(isNil, pipe(propOrLimiter('tid'), String))
@@ -211,11 +213,17 @@ const getDocumentNumber = ifElse(
   getDocuments
 )
 
+const formarDate = date => moment(date).format('DD/MM/YYYY h:mm')
+
+const getUpdatedDate = pipe(
+  propOrLimiter('date_created'),
+  unless(isNil, formarDate)
+)
 
 const transactionSpec = {
   status: getStatus,
   id: getId,
-  updated_at: propOrLimiter('date_updated'),
+  updated_at: getUpdatedDate,
   name: getCustomerName,
   payment_method: getPaymentMethod,
   card_number: getCardNumber,
