@@ -35,6 +35,27 @@ import moment from 'moment'
 
 const LIMITER = '-'
 
+// eslint-disable-next-line no-useless-escape
+const scapeString = value => `\"${value}\"`
+
+const isValueToStringScape = ifElse(
+  is(String),
+  pipe(
+    scapeString
+  ),
+  always(LIMITER)
+)
+
+const isArrayToStringScape = prop => ifElse(
+  is(Array),
+  pipe(
+    map(propOr('', prop)),
+    join(', '),
+    scapeString
+  ),
+  always(LIMITER)
+)
+
 const isEmptyOrNill = either(isNil, isEmpty)
 
 const propOrLimiter = propOr(LIMITER)
@@ -43,8 +64,6 @@ const isAntifraudScoreNil = propSatisfies(isNil, 'antifraud_score')
 
 const isRefuseReasonNil = propSatisfies(isNil, 'refuse_reason')
 
-// eslint-disable-next-line no-useless-escape
-const scapeString = value => `\"${value}\"`
 
 const getCardProp = subProp => cond([
   [
@@ -91,13 +110,7 @@ const getAntifraudProp = ifElse(
 )
 const getCustomerName = pipe(
   path(['customer', 'name']),
-  ifElse(
-    is(String),
-    pipe(
-      scapeString
-    ),
-    always(LIMITER)
-  )
+  isValueToStringScape
 )
 
 const getCustomerSubProp = subProp => pathOr(LIMITER, ['customer', subProp])
@@ -123,7 +136,8 @@ const statusNames = {
 
 const getStatus = pipe(
   propOr('default', 'status'),
-  prop(__, statusNames)
+  prop(__, statusNames),
+  isValueToStringScape,
 )
 
 const paymentMethodNames = {
@@ -181,7 +195,7 @@ const getRecipients = pipe(
       join(', '),
       scapeString
     ),
-    always('Recebedor Padrão')
+    always('"Recebedor Padrão"')
   )
 )
 
@@ -196,32 +210,20 @@ const getPhoneProp = pipe(
 
 const getPhones = pipe(getPhoneProp)
 
-const getId = unless(isNil, pipe(propOrLimiter('tid'), String))
+const getId = unless(isNil, pipe(
+  propOrLimiter('tid'), 
+  String,
+  isValueToStringScape,
+  ))
 
 const getDocuments = pipe(
   path(['customer', 'documents']),
-  ifElse(
-    is(Array),
-    pipe(
-      map(propOr('', 'number')),
-      join(', '),
-      scapeString
-    ),
-    always(LIMITER)
-  )
+  isArrayToStringScape('number'),
 )
 
 const getSubscriptions = pipe(
   prop('subscription_id'),
-  ifElse(
-    is(Array),
-    pipe(
-      map(propOr('', 'id')),
-      join(', '),
-      scapeString
-    ),
-    always(LIMITER)
-  )
+  isArrayToStringScape('id')
 )
 
 const getDocumentNumber = ifElse(
@@ -230,12 +232,47 @@ const getDocumentNumber = ifElse(
   getDocuments
 )
 
-
 const formarDate = date => moment(date).format('DD/MM/YYYY hh:mm')
 
 const getUpdatedDate = pipe(
   propOrLimiter('date_created'),
-  unless(isNil, formarDate)
+  unless(isNil, formarDate),
+  isValueToStringScape,
+)
+
+const getCustomerEmail = pipe(
+  getCustomerSubProp('email'),
+  isValueToStringScape,
+)
+
+const getAcquirerName = pipe(
+  propOrLimiter('acquirer_name'),
+  isValueToStringScape,
+)
+
+const getAcquirerResponseCode = pipe(
+  propOrLimiter('acquirer_response_code'),
+  isValueToStringScape,
+)
+
+const getIp = pipe(
+  pathSatisfies(isEmptyOrNill, ['customer', 'ip']),
+  isValueToStringScape,
+)
+
+const getAmount = pipe(
+  propOrLimiter('amount'),
+  isValueToStringScape,
+)
+
+const getRefundAmount = pipe(
+  propOrLimiter('amount'),
+  isValueToStringScape,
+)
+
+const getCardBrand = pipe(
+  getCardProp('brand'),
+  isValueToStringScape,
 )
 
 const transactionSpec = {
@@ -246,16 +283,16 @@ const transactionSpec = {
   payment_method: getPaymentMethod,
   card_number: getCardNumber,
   documents: getDocumentNumber,
-  email: getCustomerSubProp('email'),
+  email: getCustomerEmail,
   subscription: getSubscriptions,
   phones: getPhones,
-  acquirer_name: propOrLimiter('acquirer_name'),
-  acquirer_response_code: propOrLimiter('acquirer_response_code'),
-  ip: propOrLimiter('ip'),
-  brand_name: getCardProp('brand'),
-  amount: propOrLimiter('amount'),
+  acquirer_name: getAcquirerName,
+  acquirer_response_code: getAcquirerResponseCode,
+  ip: getIp,
+  brand_name: getCardBrand,
+  amount: getAmount,
   capture_method: getCaptureMethod,
-  refund_amount: propOrLimiter('refunded_amount'),
+  refund_amount: getRefundAmount,
   split_rules: getRecipients,
   street: getAddressSubProp('street'),
   streetNumber: getAddressSubProp('street_number'),
