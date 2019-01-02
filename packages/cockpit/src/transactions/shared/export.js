@@ -39,7 +39,7 @@ import moment from 'moment'
 const LIMITER = '"-"'
 
 // eslint-disable-next-line no-useless-escape
-const scapeString = value => `\"${value}\"`
+const scapeString = value => `"${value}"`
 
 const isValueToStringScape = ifElse(
   is(String),
@@ -129,7 +129,7 @@ const getCaptureMethod = ifElse(
 
 const statusNames = {
   authorized: 'Autorizado',
-  default: LIMITER,
+  default: '-',
   paid: 'Pago',
   pending_refund: 'Estorno pendente',
   processing: 'Processando pagamento',
@@ -147,7 +147,7 @@ const getStatus = pipe(
 const paymentMethodNames = {
   boleto: 'Boleto',
   credit_card: 'Cartão de Crédito',
-  default: LIMITER,
+  default: '-',
 }
 
 const getPaymentMethod = pipe(
@@ -162,7 +162,7 @@ const riskLevels = {
   moderated: 'Moderado',
   very_high: 'Muito alto',
   very_low: 'Muito baixo',
-  unknown: LIMITER,
+  unknown: '-',
 }
 
 const getRiskLevel = pipe(
@@ -210,7 +210,7 @@ const getPhoneProp = pipe(
   ifElse(
     isEmptyOrNill,
     always(LIMITER),
-    formatPhoneProp
+    formatPhoneProp    
   )
 )
 
@@ -222,14 +222,22 @@ const getId = unless(isNil, pipe(
   isValueToStringScape,
 ))
 
-const getDocuments = pipe(
-  path(['customer', 'documents']),
-  isArrayToStringScape('number'),
-)
-
 const getSubscriptions = pipe(
   prop('subscription_id'),
   isArrayToStringScape('id'),
+)
+
+const getDocuments = pipe(
+  path(['customer', 'documents']),
+  ifElse(
+    is(Array),
+    pipe(
+      map(propOr('', 'number')),
+      join(', '),
+      isValueToStringScape
+    ),
+    always(LIMITER)
+  )
 )
 
 const getDocumentNumber = ifElse(
@@ -262,7 +270,7 @@ const getAcquirerResponseCode = pipe(
 )
 
 const getIp = pipe(
-  pathSatisfies(isEmptyOrNill, ['customer', 'ip']),
+  prop('ip'),
   isValueToStringScape,
 )
 
@@ -272,12 +280,11 @@ const getAmount = pipe(
 )
 
 const getRefundAmount = pipe(
-  propOrLimiter('amount'),
-  isValueToStringScape,
+  propOrLimiter('refund_amount'),
 )
 
 const getCardBrand = pipe(
-  getCardProp('brand'),
+  propOrLimiter('card_brand'),
   isValueToStringScape,
 )
 

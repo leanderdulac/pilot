@@ -84,7 +84,6 @@ const buildData = exportType => (exportData) => {
     const lines = formatLines(exportType)
     return [header].concat(lines(exportData)).join('\r\n')
   }
-
   const header = exportKeys(exportData)
   const lines = formatLines(exportType)
   return [header].concat(lines(exportData))

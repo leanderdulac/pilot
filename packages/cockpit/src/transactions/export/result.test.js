@@ -13,7 +13,7 @@ describe('Transactions to dashboard export data', () => {
   })
 
   it('should work when transactions are returned xls', () => {
-    //const result = buildResultToExportXLS(requestResultMock)
-    //expect(result).toEqual(mockXLS)
+    const result = buildResultToExportXLS(requestResultMock)
+    expect(result).toEqual(mockXLS)
   })
 })
