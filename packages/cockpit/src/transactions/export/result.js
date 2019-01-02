@@ -79,7 +79,6 @@ const formatLines = exportType => map(pipe(
 ))
 
 const buildData = exportType => (exportData) => {
-  console.log('buildData')
   if (exportType === 'csv') {
     const header = exportKeysCSV(exportData)
     const lines = formatLines(exportType)
@@ -88,7 +87,6 @@ const buildData = exportType => (exportData) => {
 
   const header = exportKeys(exportData)
   const lines = formatLines(exportType)
-  console.log([header].concat(lines(exportData)))
   return [header].concat(lines(exportData))
 }
 

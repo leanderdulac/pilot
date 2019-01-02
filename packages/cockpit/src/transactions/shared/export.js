@@ -20,20 +20,23 @@ import {
   pathOr,
   pathSatisfies,
   pipe,
+  pick,
   prepend,
   prop,
   props,
   propEq,
+  propIs,
   propOr,
   propSatisfies,
   splitAt,
   T,
   toString,
   unless,
+  values,
 } from 'ramda'
 import moment from 'moment'
 
-const LIMITER = '-'
+const LIMITER = '"-"'
 
 // eslint-disable-next-line no-useless-escape
 const scapeString = value => `\"${value}\"`
@@ -64,7 +67,6 @@ const isAntifraudScoreNil = propSatisfies(isNil, 'antifraud_score')
 
 const isRefuseReasonNil = propSatisfies(isNil, 'refuse_reason')
 
-
 const getCardProp = subProp => cond([
   [
     pathSatisfies(complement(isNil), ['card', subProp]),
@@ -76,20 +78,6 @@ const getCardProp = subProp => cond([
   ],
   [T, always(LIMITER)],
 ])
-
-const getCardNumber = pipe(
-  path(['card', 'last_digits']),
-  ifElse(
-    is(String),
-    pipe(
-      concat('******'),
-      //concat(prop('first_digits')),
-      scapeString,
-      (res) => (console.log(res)),
-    ),
-    always(LIMITER)
-  ),
-)
 
 const isRefuseReasonAntifraud = propEq('refuse_reason', 'antifraud')
 
@@ -108,6 +96,24 @@ const getAntifraudProp = ifElse(
     score: propOrLimiter('antifraud_score'),
   })
 )
+
+const hasCardNumber = propEq('payment_method', 'credit_card')
+
+const pickCardDigits = pick(['card_first_digits','card_last_digits'])
+
+const concatCardDigits = pipe(
+  pickCardDigits,
+  values,
+  join('******'),
+  isValueToStringScape,
+)
+
+const getCardNumber = ifElse(
+  propIs(String, 'card_first_digits'),
+  concatCardDigits,
+  always(LIMITER)
+)
+
 const getCustomerName = pipe(
   path(['customer', 'name']),
   isValueToStringScape
@@ -148,7 +154,8 @@ const paymentMethodNames = {
 
 const getPaymentMethod = pipe(
   propOr('default', 'payment_method'),
-  prop(__, paymentMethodNames)
+  prop(__, paymentMethodNames),
+  isValueToStringScape,
 )
 
 const riskLevels = {
@@ -162,7 +169,8 @@ const riskLevels = {
 
 const getRiskLevel = pipe(
   propOr('unknown', 'risk_level'),
-  prop(__, riskLevels)
+  prop(__, riskLevels),
+  isValueToStringScape,
 )
 
 const formatPhoneNumber = (number) => {
@@ -214,7 +222,7 @@ const getId = unless(isNil, pipe(
   propOrLimiter('tid'), 
   String,
   isValueToStringScape,
-  ))
+))
 
 const getDocuments = pipe(
   path(['customer', 'documents']),
@@ -223,16 +231,16 @@ const getDocuments = pipe(
 
 const getSubscriptions = pipe(
   prop('subscription_id'),
-  isArrayToStringScape('id')
+  isArrayToStringScape('id'),
 )
 
 const getDocumentNumber = ifElse(
   pathSatisfies(isEmptyOrNill, ['customer', 'documents']),
   pathOr(LIMITER, ['customer', 'document_number']),
-  getDocuments
+  getDocuments,
 )
 
-const formarDate = date => moment(date).format('DD/MM/YYYY hh:mm')
+const formarDate = date => moment(date).format('DD/MM/YYYY HH:mm')
 
 const getUpdatedDate = pipe(
   propOrLimiter('date_created'),
