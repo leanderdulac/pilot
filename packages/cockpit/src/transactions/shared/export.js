@@ -97,8 +97,6 @@ const getAntifraudProp = ifElse(
   })
 )
 
-const hasCardNumber = propEq('payment_method', 'credit_card')
-
 const pickCardDigits = pick(['card_first_digits','card_last_digits'])
 
 const concatCardDigits = pipe(
