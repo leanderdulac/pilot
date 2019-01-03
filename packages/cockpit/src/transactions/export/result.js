@@ -2,9 +2,6 @@ import {
   applySpec,
   concat,
   head,
-  join,
-  ifElse,
-  is,
   keys,
   map,
   path,
@@ -60,13 +57,11 @@ const exportKeys = pipe(
   uniq
 )
 
-const exportKeysCSV = exportData => {
-  return `${exportKeys(exportData).map(value => `"${value}"`).join(",")}`
-}
+const exportKeysCSV = exportData => `${exportKeys(exportData).map(value => `'${value}'`).join(',')}`
 
 const format = exportType => (exportData) => {
   if (exportType === 'csv') {
-    return `${values(exportData).map(value => `"${value}"`).join(",")}`
+    return `${values(exportData).map(value => `'${value}'`).join(',')}`
   }
 
   return values(exportData)

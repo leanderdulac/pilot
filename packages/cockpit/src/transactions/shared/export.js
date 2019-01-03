@@ -3,7 +3,6 @@ import {
   always,
   applySpec,
   complement,
-  concat,
   cond,
   either,
   head,
@@ -21,7 +20,6 @@ import {
   pathSatisfies,
   pipe,
   pick,
-  prepend,
   prop,
   props,
   propEq,
@@ -30,7 +28,6 @@ import {
   propSatisfies,
   splitAt,
   T,
-  toString,
   unless,
   values,
 } from 'ramda'
@@ -41,10 +38,10 @@ const LIMITER = '-'
 // eslint-disable-next-line no-useless-escape
 const scapeString = value => `"${value}"`
 
-const isArrayToStringScape = prop => ifElse(
+const isArrayToStringScape = value => ifElse(
   is(Array),
   pipe(
-    map(propOr('', prop)),
+    map(propOr('', value)),
     join(', '),
     scapeString
   ),
@@ -89,12 +86,12 @@ const getAntifraudProp = ifElse(
   })
 )
 
-const pickCardDigits = pick(['card_first_digits','card_last_digits'])
+const pickCardDigits = pick(['card_first_digits', 'card_last_digits'])
 
 const concatCardDigits = pipe(
   pickCardDigits,
   values,
-  join('******'),
+  join('******')
 )
 
 const getCardNumber = ifElse(
@@ -103,9 +100,7 @@ const getCardNumber = ifElse(
   always(LIMITER)
 )
 
-const getCustomerName = pipe(
-  path(['customer', 'name'])
-)
+const getCustomerName = pipe(path(['customer', 'name']))
 
 const getCustomerSubProp = subProp => pathOr(LIMITER, ['customer', subProp])
 
@@ -185,8 +180,7 @@ const getRecipients = pipe(
     is(Array),
     pipe(
       map(propOr('', 'id')),
-      join(', '),
-      scapeString
+      join(', ')
     ),
     always('Recebedor Padrão')
   )
@@ -197,20 +191,20 @@ const getPhoneProp = pipe(
   ifElse(
     isEmptyOrNill,
     always(LIMITER),
-    formatPhoneProp    
+    formatPhoneProp
   )
 )
 
 const getPhones = pipe(getPhoneProp)
 
 const getId = unless(isNil, pipe(
-  propOrLimiter('tid'), 
+  propOrLimiter('tid'),
   String
 ))
 
 const getSubscriptions = pipe(
   prop('subscription_id'),
-  isArrayToStringScape('id'),
+  isArrayToStringScape('id')
 )
 
 const getDocuments = pipe(
@@ -228,7 +222,7 @@ const getDocuments = pipe(
 const getDocumentNumber = ifElse(
   pathSatisfies(isEmptyOrNill, ['customer', 'documents']),
   pathOr(LIMITER, ['customer', 'document_number']),
-  getDocuments,
+  getDocuments
 )
 
 const formarDate = date => moment(date).format('DD/MM/YYYY HH:mm')
@@ -238,29 +232,19 @@ const getUpdatedDate = pipe(
   unless(isNil, formarDate)
 )
 
-const getCustomerEmail = pipe(
-  getCustomerSubProp('email')
-)
+const getCustomerEmail = pipe(getCustomerSubProp('email'))
 
-const getAcquirerName = pipe(
-  propOrLimiter('acquirer_name')
-)
+const getAcquirerName = pipe(propOrLimiter('acquirer_name'))
 
-const getAcquirerResponseCode = pipe(
-  propOrLimiter('acquirer_response_code')
-)
+const getAcquirerResponseCode = pipe(propOrLimiter('acquirer_response_code'))
 
-const getIp = pipe(
-  prop('ip')
-)
+const getIp = pipe(propOrLimiter('ip'))
 
-const getAmount = pipe(
-  propOrLimiter('amount')
-)
+const getAmount = pipe(propOrLimiter('amount'))
 
-const getRefundAmount = pipe(
-  propOrLimiter('refund_amount'),
-)
+const getRefundAmount = pipe(propOrLimiter('refund_amount'))
+
+const getCardBrand = pipe(propOrLimiter('card_brand'))
 
 const transactionSpec = {
   status: getStatus,
@@ -276,7 +260,7 @@ const transactionSpec = {
   acquirer_name: getAcquirerName,
   acquirer_response_code: getAcquirerResponseCode,
   ip: getIp,
-  brand_name: getCardProp('brand'),
+  brand_name: getCardBrand,
   amount: getAmount,
   capture_method: getCaptureMethod,
   refund_amount: getRefundAmount,
