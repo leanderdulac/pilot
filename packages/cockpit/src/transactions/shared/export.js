@@ -236,7 +236,13 @@ const getCustomerEmail = pipe(getCustomerSubProp('email'))
 
 const getAcquirerName = pipe(propOrLimiter('acquirer_name'))
 
-const getAcquirerResponseCode = pipe(propOrLimiter('acquirer_response_code'))
+const getAcquirerResponseCode = cond([
+  [
+    pathSatisfies(isNil, 'acquirer_response_code'),
+    propOrLimiter('acquirer_response_code'),
+  ],
+  [T, always(LIMITER)],
+])
 
 const getIp = pipe(propOrLimiter('ip'))
 
