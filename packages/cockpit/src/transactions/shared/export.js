@@ -36,18 +36,10 @@ import {
 } from 'ramda'
 import moment from 'moment'
 
-const LIMITER = '"-"'
+const LIMITER = '-'
 
 // eslint-disable-next-line no-useless-escape
 const scapeString = value => `"${value}"`
-
-const isValueToStringScape = ifElse(
-  is(String),
-  pipe(
-    scapeString
-  ),
-  always(LIMITER)
-)
 
 const isArrayToStringScape = prop => ifElse(
   is(Array),
@@ -103,7 +95,6 @@ const concatCardDigits = pipe(
   pickCardDigits,
   values,
   join('******'),
-  isValueToStringScape,
 )
 
 const getCardNumber = ifElse(
@@ -113,8 +104,7 @@ const getCardNumber = ifElse(
 )
 
 const getCustomerName = pipe(
-  path(['customer', 'name']),
-  isValueToStringScape
+  path(['customer', 'name'])
 )
 
 const getCustomerSubProp = subProp => pathOr(LIMITER, ['customer', subProp])
@@ -140,8 +130,7 @@ const statusNames = {
 
 const getStatus = pipe(
   propOr('default', 'status'),
-  prop(__, statusNames),
-  isValueToStringScape,
+  prop(__, statusNames)
 )
 
 const paymentMethodNames = {
@@ -152,8 +141,7 @@ const paymentMethodNames = {
 
 const getPaymentMethod = pipe(
   propOr('default', 'payment_method'),
-  prop(__, paymentMethodNames),
-  isValueToStringScape,
+  prop(__, paymentMethodNames)
 )
 
 const riskLevels = {
@@ -167,8 +155,7 @@ const riskLevels = {
 
 const getRiskLevel = pipe(
   propOr('unknown', 'risk_level'),
-  prop(__, riskLevels),
-  isValueToStringScape,
+  prop(__, riskLevels)
 )
 
 const formatPhoneNumber = (number) => {
@@ -201,7 +188,7 @@ const getRecipients = pipe(
       join(', '),
       scapeString
     ),
-    always('"Recebedor Padrão"')
+    always('Recebedor Padrão')
   )
 )
 
@@ -218,8 +205,7 @@ const getPhones = pipe(getPhoneProp)
 
 const getId = unless(isNil, pipe(
   propOrLimiter('tid'), 
-  String,
-  isValueToStringScape,
+  String
 ))
 
 const getSubscriptions = pipe(
@@ -233,8 +219,7 @@ const getDocuments = pipe(
     is(Array),
     pipe(
       map(propOr('', 'number')),
-      join(', '),
-      isValueToStringScape
+      join(', ')
     ),
     always(LIMITER)
   )
@@ -250,42 +235,31 @@ const formarDate = date => moment(date).format('DD/MM/YYYY HH:mm')
 
 const getUpdatedDate = pipe(
   propOrLimiter('date_created'),
-  unless(isNil, formarDate),
-  isValueToStringScape,
+  unless(isNil, formarDate)
 )
 
 const getCustomerEmail = pipe(
-  getCustomerSubProp('email'),
-  isValueToStringScape,
+  getCustomerSubProp('email')
 )
 
 const getAcquirerName = pipe(
-  propOrLimiter('acquirer_name'),
-  isValueToStringScape,
+  propOrLimiter('acquirer_name')
 )
 
 const getAcquirerResponseCode = pipe(
-  propOrLimiter('acquirer_response_code'),
-  isValueToStringScape,
+  propOrLimiter('acquirer_response_code')
 )
 
 const getIp = pipe(
-  prop('ip'),
-  isValueToStringScape,
+  prop('ip')
 )
 
 const getAmount = pipe(
-  propOrLimiter('amount'),
-  isValueToStringScape,
+  propOrLimiter('amount')
 )
 
 const getRefundAmount = pipe(
   propOrLimiter('refund_amount'),
-)
-
-const getCardBrand = pipe(
-  propOrLimiter('card_brand'),
-  isValueToStringScape,
 )
 
 const transactionSpec = {
@@ -302,7 +276,7 @@ const transactionSpec = {
   acquirer_name: getAcquirerName,
   acquirer_response_code: getAcquirerResponseCode,
   ip: getIp,
-  brand_name: getCardBrand,
+  brand_name: getCardProp('brand'),
   amount: getAmount,
   capture_method: getCaptureMethod,
   refund_amount: getRefundAmount,

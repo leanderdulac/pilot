@@ -60,11 +60,13 @@ const exportKeys = pipe(
   uniq
 )
 
-const exportKeysCSV = exportData => exportKeys(exportData).join(',')
+const exportKeysCSV = exportData => {
+  return `${exportKeys(exportData).map(value => `"${value}"`).join(",")}`
+}
 
 const format = exportType => (exportData) => {
   if (exportType === 'csv') {
-    return values(exportData).join(',')
+    return `${values(exportData).map(value => `"${value}"`).join(",")}`
   }
 
   return values(exportData)
