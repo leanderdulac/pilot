@@ -4,6 +4,7 @@ import {
   applySpec,
   complement,
   cond,
+  defaultTo,
   either,
   head,
   ifElse,
@@ -236,22 +237,43 @@ const getCustomerEmail = pipe(getCustomerSubProp('email'))
 
 const getAcquirerName = pipe(propOrLimiter('acquirer_name'))
 
-const getAcquirerResponseCode = cond([
-  [
-    pathSatisfies(isNil, 'acquirer_response_code'),
-    pathSatisfies(isNil, 'acquirer_response_code'),
-    propOrLimiter('acquirer_response_code'),
-  ],
-  [T, always(LIMITER)],
-])
+const getAcquirerResponseCode = pipe(
+  propOrLimiter('acquirer_response_code'),
+  ifElse(
+    isNil,
+    always(LIMITER),
+    defaultTo(propOrLimiter('acquirer_response_code'))
+  )
+)
 
-const getIp = pipe(propOrLimiter('ip'))
+const getIp = pipe(
+  propOrLimiter('ip'),
+  ifElse(
+    isNil,
+    always(LIMITER),
+    defaultTo(propOrLimiter('ip'))
+  )
+)
 
-const getAmount = pipe(propOrLimiter('amount'))
+const getAmount = pipe(
+  propOrLimiter('amount'),
+  ifElse(
+    isNil,
+    always(LIMITER),
+    defaultTo(propOrLimiter('amount'))
+  )
+)
 
 const getRefundAmount = pipe(propOrLimiter('refund_amount'))
 
-const getCardBrand = pipe(propOrLimiter('card_brand'))
+const getCardBrand = pipe(
+  propOrLimiter('card_brand'),
+  ifElse(
+    isNil,
+    always(LIMITER),
+    defaultTo(propOrLimiter('amount'))
+  )
+)
 
 const transactionSpec = {
   status: getStatus,
