@@ -239,6 +239,7 @@ const getAcquirerName = pipe(propOrLimiter('acquirer_name'))
 const getAcquirerResponseCode = cond([
   [
     pathSatisfies(isNil, 'acquirer_response_code'),
+    pathSatisfies(isNil, 'acquirer_response_code'),
     propOrLimiter('acquirer_response_code'),
   ],
   [T, always(LIMITER)],
