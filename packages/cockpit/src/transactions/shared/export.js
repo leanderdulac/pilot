@@ -105,7 +105,19 @@ const getCustomerName = pipe(path(['customer', 'name']))
 
 const getCustomerSubProp = subProp => pathOr(LIMITER, ['customer', subProp])
 
-const getAddressSubProp = subProp => pathOr(LIMITER, [path(['billing', 'address']), subProp])
+const getAddressProp = either(
+  path(['billing', 'address']),
+  path(['address'])
+)
+
+const getAddressSubProp = property => 
+  either(
+    pipe(
+      getAddressProp, 
+      prop(property)
+    ), 
+    () => LIMITER
+)
 
 const getCaptureMethod = ifElse(
   propSatisfies(isNil, 'capture_method'),

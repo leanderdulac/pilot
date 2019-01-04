@@ -9,7 +9,7 @@ const buildResultToExportXLS = buildResult('xls')
 describe('Transactions to dashboard export data', () => {
   it('should work when transactions are returned csv', () => {
     const result = buildResultToExportCSV(requestResultMock)
-    expect(result).toEqual(mockCSV)
+    expect(result.replace(/\s/g, '')).toEqual(mockCSV.replace(/\s/g, ''))
   })
 
   it('should work when transactions are returned xls', () => {
