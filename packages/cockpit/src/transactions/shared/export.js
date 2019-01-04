@@ -215,9 +215,9 @@ const getId = unless(isNil, pipe(
   String
 ))
 
-const getSubscriptions = pipe(
+const getSubscriptions = either(
   prop('subscription_id'),
-  isArrayToStringScape('id')
+  () => LIMITER
 )
 
 const getDocuments = pipe(
