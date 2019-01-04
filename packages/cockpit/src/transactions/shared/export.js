@@ -5,6 +5,7 @@ import {
   complement,
   cond,
   defaultTo,
+  divide,
   either,
   head,
   ifElse,
@@ -110,20 +111,14 @@ const getAddressProp = either(
   path(['address'])
 )
 
-const getAddressSubProp = property => 
+const getAddressSubProp = property =>
   either(
     pipe(
-      getAddressProp, 
+      getAddressProp,
       prop(property)
-    ), 
+    ),
     () => LIMITER
-)
-
-const getCaptureMethod = ifElse(
-  propSatisfies(isNil, 'capture_method'),
-  propOrLimiter('capture_method'),
-  getCardProp('capture_method')
-)
+  )
 
 const statusNames = {
   authorized: 'Autorizado',
@@ -267,8 +262,8 @@ const getIp = pipe(
   )
 )
 
-const getAmount = pipe(
-  propOrLimiter('amount'),
+const getCardBrand = pipe(
+  propOrLimiter('card_brand'),
   ifElse(
     isNil,
     always(LIMITER),
@@ -276,14 +271,12 @@ const getAmount = pipe(
   )
 )
 
-const getRefundAmount = pipe(propOrLimiter('refund_amount'))
-
-const getCardBrand = pipe(
-  propOrLimiter('card_brand'),
+const getBRLProp = property => pipe(
+  prop(property),
   ifElse(
     isNil,
     always(LIMITER),
-    defaultTo(propOrLimiter('amount'))
+    divide(__, 100)
   )
 )
 
@@ -302,9 +295,9 @@ const transactionSpec = {
   acquirer_response_code: getAcquirerResponseCode,
   ip: getIp,
   brand_name: getCardBrand,
-  amount: getAmount,
-  capture_method: getCaptureMethod,
-  refund_amount: getRefundAmount,
+  amount: getBRLProp('amount'),
+  paid_amount: getBRLProp('paid_amount'),
+  refunded_amount: getBRLProp('refunded_amount'),
   split_rules: getRecipients,
   street: getAddressSubProp('street'),
   streetNumber: getAddressSubProp('street_number'),
