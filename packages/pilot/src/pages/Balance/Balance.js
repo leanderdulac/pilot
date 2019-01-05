@@ -184,7 +184,7 @@ const userIsReadOnly = propEq('permission', 'read_only')
 const handleExportDataSuccess = (res, format) => {
   let contentType
   if (format === 'xlsx') {
-    contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    contentType = 'application/ms-excel'
   } else {
     contentType = 'text/csv;charset=utf-8'
   }
@@ -198,9 +198,7 @@ const handleExportDataSuccess = (res, format) => {
   const URL = window.URL || window.webkitURL
   const downloadUrl = URL.createObjectURL(blob)
   downloadLink.href = downloadUrl
-  document.body.append(downloadLink)
   downloadLink.click()
-  document.body.removeChild(downloadLink)
   URL.revokeObjectURL(downloadUrl)
 }
 
